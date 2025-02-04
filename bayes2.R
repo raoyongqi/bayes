@@ -1,0 +1,96 @@
+# 加载所需的库
+library("bayesplot")
+library("rstanarm")
+library("ggplot2")
+library("xtable")
+
+setwd("C:/Users/r/Desktop/bayes")
+
+file_path <- "selection.csv"  # 替换为你的文件路径
+selection <- read.csv(file_path)
+
+# 对自变量进行标准化，保持因变量不变
+selection_scaled <- selection
+selection_scaled[ , -which(names(selection) == "RATIO")] <- scale(selection[ , -which(names(selection) == "RATIO")])
+
+# 使用标准化后的数据进行拟合
+fit <- stan_glm(RATIO ~ ., data = selection_scaled)
+posterior <- as.matrix(fit)
+params <- colnames(posterior)
+
+# 要排除的参数
+exclude_params <- c("LAT", "MAX_MAT", "MIN_MAT", "AVG_MAT", "(Intercept)", "sigma")
+
+# 过滤掉要排除的参数
+params_to_plot <- setdiff(params, exclude_params)
+
+# 绘制后验分布
+plot_title <- ggtitle("Posterior Distributions of Regression Coefficients",
+                      "with medians and 80% intervals")
+
+mcmc_areas(posterior, 
+           pars = params_to_plot, 
+           prob = 0.8) + 
+  plot_title
+
+all_params <- colnames(posterior)
+params_to_keep <- setdiff(all_params, exclude_params)
+
+# 仅保留需要的参数
+posterior_filtered <- posterior[, params_to_keep]
+
+# 计算回归系数统计量
+coef_summary <- apply(posterior_filtered, 2, function(x) {
+  c(
+    Estimate = round(median(x), 2), 
+    Lower = round(quantile(x, 0.025), 2), 
+    Upper = round(quantile(x, 0.975), 2)
+  )
+})
+
+# 转置并整理为数据框
+coef_summary_df <- as.data.frame(t(coef_summary))
+
+# 重命名列名
+colnames(coef_summary_df) <- c("Estimate", "Lower", "Upper")
+
+
+
+coef_summary_df$Est.error <- coef_summary_df$Estimate - coef_summary_df$Lower
+
+coef_summary_df$`95%CI(Credible intervals)` <- paste(coef_summary_df$Lower, coef_summary_df$Upper, sep = "-")
+rownames(coef_summary_df) <- sapply(rownames(coef_summary_df), function(x) gsub("_", " ", x))
+
+# 移除不需要的列
+coef_summary_df <- subset(coef_summary_df, select = -c(Lower, Upper))
+
+# 添加 Predictor 和 Response 列
+coef_summary_df$Predictor <- rownames(coef_summary_df)
+coef_summary_df$Response <- "Plant Disease"
+
+print(coef_summary_df)
+# 重新排列列顺序
+coef_summary_df <- coef_summary_df[, c("Response", "Predictor", "Estimate", "Est.error", "95%CI(Credible intervals)")]
+print(coef_summary_df)
+custom_colnames <- function(colnames) {
+  # 将下划线替换为空格
+  # 将 95%CI 部分替换为两行
+  colnames <- gsub("95%CI\\(Credible intervals\\)", "95\\% CI\\par(Credible intervals)", colnames)
+  return(colnames)
+}
+
+latex_table <- xtable(coef_summary_df, 
+                      align = c("l", "l", "l", "r", "r", "l"),
+                      caption = "Summary of Regression Coefficients")
+print(latex_table)
+
+output_path <- "C:/Users/r/Desktop/bayes/regression_coefficients_filtered.tex"
+
+print(latex_table, 
+      type = "latex", 
+      include.rownames = FALSE, 
+      sanitize.colnames.function = custom_colnames, 
+      file = output_path)
+
+# 通知保存成功
+cat("LaTeX table saved to:", output_path)
