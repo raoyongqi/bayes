@@ -1,4 +1,3 @@
-# 加载所需的库
 library("bayesplot")
 library("rstanarm")
 library("ggplot2")
@@ -6,7 +5,7 @@ library("xtable")
 
 setwd("C:/Users/r/Desktop/bayes")
 
-file_path <- "selection.csv"  # 替换为你的文件路径
+file_path <- "data/selection.csv"  # 替换为你的文件路径
 selection <- read.csv(file_path)
 
 # 对自变量进行标准化，保持因变量不变
@@ -28,9 +27,9 @@ params_to_plot <- setdiff(params, exclude_params)
 plot_title <- ggtitle("Posterior Distributions of Regression Coefficients",
                       "with medians and 80% intervals")
 
-mcmc_areas(posterior, 
-           pars = params_to_plot, 
-           prob = 0.8) + 
+mcmc_areas(posterior,
+           pars = params_to_plot,
+           prob = 0.8) +
   plot_title
 
 all_params <- colnames(posterior)
@@ -42,8 +41,8 @@ posterior_filtered <- posterior[, params_to_keep]
 # 计算回归系数统计量
 coef_summary <- apply(posterior_filtered, 2, function(x) {
   c(
-    Estimate = round(median(x), 2), 
-    Lower = round(quantile(x, 0.025), 2), 
+    Estimate = round(median(x), 2),
+    Lower = round(quantile(x, 0.025), 2),
     Upper = round(quantile(x, 0.975), 2)
   )
 })
@@ -79,17 +78,17 @@ custom_colnames <- function(colnames) {
   return(colnames)
 }
 
-latex_table <- xtable(coef_summary_df, 
+latex_table <- xtable(coef_summary_df,
                       align = c("l", "l", "l", "r", "r", "l"),
                       caption = "Summary of Regression Coefficients")
 print(latex_table)
 
 output_path <- "C:/Users/r/Desktop/bayes/regression_coefficients_filtered.tex"
 
-print(latex_table, 
-      type = "latex", 
-      include.rownames = FALSE, 
-      sanitize.colnames.function = custom_colnames, 
+print(latex_table,
+      type = "latex",
+      include.rownames = FALSE,
+      sanitize.colnames.function = custom_colnames,
       file = output_path)
 
 # 通知保存成功

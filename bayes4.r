@@ -15,3 +15,4 @@ model <- ' # 测量模型
 
 # 拟合模型
 fit <- sem(model, data = your_data)  # 替换为实际数据
+install.packages("mlr3")
