@@ -24,13 +24,28 @@ exclude_params <- c("LAT", "MAX_MAT", "MIN_MAT", "AVG_MAT", "(Intercept)", "sigm
 params_to_plot <- setdiff(params, exclude_params)
 
 # 绘制后验分布
+library(ggplot2)
+library(bayesplot)
+
+library(ggplot2)
+library(bayesplot)
+
+# Assuming posterior and params_to_plot are already defined
 plot_title <- ggtitle("Posterior Distributions of Regression Coefficients",
                       "with medians and 80% intervals")
 
-mcmc_areas(posterior,
-           pars = params_to_plot,
-           prob = 0.8) +
-  plot_title
+# Create the plot
+plot <- mcmc_areas(posterior,
+                   pars = params_to_plot,
+                   prob = 0.8) + 
+  plot_title + 
+  theme(
+    panel.background = element_rect(fill = "white"),  # Set background to white
+    plot.background = element_rect(fill = "white")   # Set entire plot background to white
+  )
+
+# Save the plot as a high-resolution PNG image
+ggsave("high_res_plot.png", plot = plot, dpi = 300, width = 10, height = 8)
 
 all_params <- colnames(posterior)
 params_to_keep <- setdiff(all_params, exclude_params)

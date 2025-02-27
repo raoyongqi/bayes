@@ -3,7 +3,7 @@ import numpy as np
 from scipy.stats import spearmanr
 import re
 # 文件路径
-file_path = "C:/Users/r/Desktop/bayes/selection.csv"  # 替换为你的文件路径
+file_path = "C:/Users/r/Desktop/bayes/data/selection.csv"  # 替换为你的文件路径
 
 # 读取数据
 selection = pd.read_csv(file_path)
@@ -44,6 +44,8 @@ formatted_df = heatmap_data.fillna("").astype(str)
 
 
 
+output_file = "C:/Users/r/Desktop/bayes/formatted_correlation_matrix.xlsx"  # 选择输出文件路径
+formatted_df.to_excel(output_file, index=False)
 
 modified_columns = []
 for item in formatted_df.columns:
@@ -56,6 +58,9 @@ formatted_df.columns = modified_columns
 formatted_df.index = formatted_df.index.map(lambda x: re.sub(r'\\par', '', x))
 
 formatted_df.index = formatted_df.index.map(lambda x: f"\\textbf{{{x}}}")
+# 输出为Excel文件
+
+print(f"Excel file has been saved at: {output_file}")
 latex_table = formatted_df.to_latex(
     index=True,
     header=True,
