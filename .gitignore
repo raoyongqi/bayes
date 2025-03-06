@@ -24,3 +24,5 @@ pymc_env/
 *.thm
 trash/
 *.jpg
+data/
+*.rds
