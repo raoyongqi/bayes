@@ -1,6 +1,18 @@
 library(ggplot2)
 library(dplyr)
 library(sf)
+require(geoR)
+require(randomForest)
+require(pls)
+require(caret)
+require(parallel)
+require(doParallel)
+require(raster)
+require(sf)
+require(pracma)
+require(data.table)
+require(ggplot2)
+require(ggpubr)
 # 读取数据
 file_path <- "C:/Users/r/Desktop/bayes/data/selection.csv"  # 替换为你的文件路径
 df <- read.csv(file_path)
@@ -9,6 +21,7 @@ df <- read.csv(file_path)
 df$Pathogen.Load <- df$RATIO
 df <- df[, !names(df) %in% c("RATIO")]
 
+find("margin")
 
 df_sf <- st_as_sf(df, coords = c("LON", "LAT"), crs = 4326, remove = FALSE)
 
@@ -67,6 +80,7 @@ bin <- variog(data_geoR, uvec = dtmp)
 env  = variog.mc.env(data_geoR, obj.variog = bin)
 # plot(bin, envelope = env, pch=21, bg="grey", xlab="Distance (m)", ylab="Semivariance", main = "Semivarigoram on selected variable", xlim=c(0,1000*1000))
 library(ggplot2)
+detach("package:randomForest", unload = TRUE)
 
 # 提取半变异数据
 library(ggplot2)
@@ -84,6 +98,9 @@ env_df <- data.frame(
   Upper = env$v.upper        # 置信区间上界
 )
 env_df
+args(margin)
+remove.packages("randomForest")
+
 # 使用 ggplot 绘制
 plot11 <- ggplot() +
   # 置信区间

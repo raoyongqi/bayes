@@ -1,16 +1,29 @@
 # 加载必要的库
-library(vegan)
-library(linkET)
-library(corrr)
+
+require(geoR)
+require(randomForest)
+require(pls)
+require(caret)
+require(parallel)
+require(doParallel)
+require(raster)
+require(sf)
+require(pracma)
+require(data.table)
+require(ggplot2)
+require(ggpubr)
 library(ggplot2)
 library(dplyr)
 # 读取数据
+
+rm(list=ls())
+# 删除 'RATIO' 列
 file_path <- "C:/Users/r/Desktop/bayes/data/selection.csv"  # 替换为你的文件路径
 df <- read.csv(file_path)
 
-# 删除 'RATIO' 列
 df$Pathogen.Load <- df$RATIO
 df <- df[, !names(df) %in% c("RATIO")]
+library(sp)
 
 
 df_sf <- st_as_sf(df, coords = c("LON", "LAT"), crs = 4326, remove = FALSE)
@@ -23,12 +36,20 @@ df_sf_utm <- st_transform(df_sf, crs = 32650)
 df$UTMx <- st_coordinates(df_sf_utm)[, 1]
 df$UTMy <- st_coordinates(df_sf_utm)[, 2]
 df
-vars_of_interest = c("ELEV",  "S_SAND" ,  "SRAD" )  # 根据需要修改
+vars_of_interest = c("ELEV",  "S_SAND" , "T_SAND","SRAD","PSEA" )  # 根据需要修改
 
 # 创建一个空的列表来存储每个变量的图形
 bin_list <- list()
 env_list <- list()
+dir_path = "C:/Users/r/Desktop/bayes/data/Toy_dataset.rds"
+dir_path
+# load data (toy example provided, named "DATA_review.rds")
+valuetable = readRDS(dir_path)
+
+# Source functions
+source("C:/Users/r/Desktop/bayes/Functions_Ploton-et-al_2020.R")
 test = dist(data_geoR_tmp[,c("x", "y")])
+
 bla = bin.var(test, bins = 100, method = c("proportions"), labels = NULL)
 
 for(var_of_interest in vars_of_interest) {
@@ -113,8 +134,6 @@ unique_variables_env <- unique(env_combined$Variable)
 print(unique_variables_bin)
 print(unique_variables_env)
 
-# 颜色映射
-color_palette <- c("green" = "#2ca02c", "lightblue" = "#1f77b4", "brown" = "#8c564b")
 
 # 确保变量和颜色的映射正确
 library(ggthemes)
@@ -150,30 +169,152 @@ theme_publication <- function(base_size = 12, base_family = "Helvetica", ...) {
             strip.background = element_blank()
     ))
 }
-p22 <-ggplot() +
+
+env_combined
+bin_combined
+library(ggplot2)
+p113<-ggplot() +
   geom_ribbon(data = env_combined, aes(x = Distance, ymin = Lower, ymax = Upper, fill = Variable), 
               alpha = 0.1) +
   geom_smooth(data = bin_combined, aes(x = Distance, y = Semivariance, color = Variable),
-              size = 4, se = FALSE) +
-  scale_colour_manual(values = c("#2ca02c",  "lightblue",  "darkred"))+
-  theme_publication() +  # 使用 ggplot2 内置主题
-  labs(x = "Distance (m)", y = "Semivariance", ) +
+              size = 4, se = FALSE)  +
+  scale_colour_manual(values = c("ELEV" = "#2ca02c",  # "Geo" 组用绿色
+                                 "SRAD" = "lightblue",  # "Climate" 组用浅蓝色
+                                 "PSEA" = "lightblue",  # "Climate" 组用浅蓝色
+                                 
+                                 "S_SAND" = "darkred",  # "Sand" 组用深红色
+                                 "T_SAND" = "darkred")) +  # 其他组用深红色
+  scale_fill_manual(values = c("ELEV" = "#2ca02c", 
+                               "SRAD" = "lightblue",
+                               "PSEA" = "lightblue",
+                               
+                               "S_SAND" = "darkred", 
+                               "T_SAND" = "darkred"))+
+ labs(x = "Distance (m)", y = "Semivariance", ) + 
+  # 设置主题
+  theme_publication() +
   theme(
     text = element_text(size = 14, face = "bold"),  # 加粗字体
     plot.title = element_text(hjust = 0.5),
     axis.text = element_text(size = 14, face = "bold"),  # 加粗坐标轴的数字
     axis.title = element_text(size = 14, face = "bold"),  # 加粗坐标轴标题
-    legend.position = c(0.85, 0.15),  # 将图例放到右下角
-    legend.text = element_text(size = 16, face = "bold")  # 加粗图例文本
+    legend.position = "none",  # 将图例放到右下角
+    legend.background = element_blank(),
     
-  ) +
-  guides(
-    fill = guide_legend(ncol = 1, title = NULL),  # 去除图例标题
-    color = guide_legend(ncol = 1, title = NULL)  # 去除图例标题
+
   )
+plot11+p113
+library(dplyr)
+env_combined <- env_combined %>%
+  mutate(VariableGroup = ifelse(Variable %in% c("S_SAND", "T_SAND"), "Sand", 
+                                ifelse(Variable %in% c("SRAD", "PSEA"), "Climate", 
+                                       ifelse(Variable %in% c("ELEV"), "Geo", "Other"))))
+
+bin_combined <- bin_combined %>%
+  mutate(VariableGroup = ifelse(Variable %in% c("S_SAND", "T_SAND"), "Sand", 
+                                ifelse(Variable %in% c("SRAD", "PSEA"), "Climate", 
+                                       ifelse(Variable %in% c("ELEV"), "Geo", "Other"))))
+
+library(ggplot2)
+p2 <-ggplot() +
+  geom_smooth(data = bin_combined, aes(x = Distance, y = Semivariance, color = VariableGroup),
+              size = 4, se = FALSE)  +
+  scale_colour_manual(values = c("Geo" = "green",  # "Geo" 组用绿色
+                                 "Climate" = "lightblue",  # "Climate" 组用浅蓝色
+                                 "Sand" = "darkred",  # "Sand" 组用深红色
+                                 "Other" = "darkred")) +  # 其他组用深红色
+  scale_fill_manual(values = c("Geo" = "green", 
+                               "Climate" = "lightblue", 
+                               "Sand" = "darkred", 
+                               "Other" = "darkred"))+
+  labs(x = "Distance (m)", y = "Semivariance", ) + 
+  theme_publication()+
+theme(
+    text = element_text(size = 14, face = "bold"),  # 加粗字体
+    plot.title = element_text(hjust = 0.5),
+    axis.text = element_text(size = 14, face = "bold"),  # 加粗坐标轴的数字
+    axis.title = element_text(size = 14, face = "bold"),  # 加粗坐标轴标题
+    legend.background = element_blank(),
+    legend.position = c(0.9, 0.1),        # 右下角 (x = 1, y = 0)
+    legend.justification = c(0.9, 0.1),    # 图例对齐方式 (右对齐, 下对齐)
+    legend.title = element_blank() ,
+    legend.key.size = unit(1, "cm"),  # 控制图例项的大小
+    legend.direction = "vertical",
+    legend.text = element_text(size = 16)  # 增大图例文本的字体
+    
+    # 每个legend项竖直排列# 移除图例标题
+  )
+p2
+remotes::install_github('jbryer/likert')
+library(grid)
+library(gtable)
+dev.off()
+
+p1
+complex_legend <- gTree(children = gList(
+  rectGrob(x = 0.2, y = 0.8, width = 0.1, height = 0.1, gp = gpar(fill = "red")),
+  textGrob("Red Square", x = 0.4, y = 0.8, just = "left"),
+  
+  circleGrob(x = 0.2, y = 0.6, r = 0.05, gp = gpar(fill = "blue")),
+  textGrob("Blue Circle", x = 0.4, y = 0.6, just = "left"),
+  
+  linesGrob(x = c(0.15, 0.25), y = c(0.4, 0.4), gp = gpar(col = "green", lwd = 2)),
+  textGrob("Green Line", x = 0.4, y = 0.4, just = "left")
+))
+
+
+Get_plot_guides = function(){
+  
+  # Set scalings manual
+  res = c('Younger\nadults' = '#999999',
+          'Older\nadults' = '#56B4E9',
+          'Low' = '#0072B2',
+          'Mid' = '#009E73',
+          'High' = '#E69F00',
+          'Free\nchoices' = 'solid',
+          'Guided\nchoices' = 'dashed',
+          'RW' = '#A36A2C',
+          'Uncertainty' = '#D2C08E',
+          'Valence' = '#2586A0',
+          'Uncertainty +\nValence' = '#A7544B',
+          'Unc+Valence' = '#A7544B',
+          'Surprise' = '#B7C7B8',
+          'Uncertainty +\nSurprise' = '#2F4858',
+          'Unc+Surprise' = '#2F4858',
+          'Valence+Surprise' = '#bf9fcc')
+  
+  return(res)
+  
+}
+}
+library(ggplot2)
+  
+  # 创建一些示例数据
+  data <- data.frame(
+    x = c(1, 2, 3),
+    y = c(3, 2, 1),
+    category = c("A", "B", "C")
+  )
+  
+  # 创建一个空的图形，只显示图例
+  p <- ggplot(data, aes(x = x, y = y, color = category)) +
+    geom_point() +  # 绘制一些点
+    theme_void() +  # 移除背景和坐标轴
+    theme(legend.position = "right") +  # 显示图例
+    guides(color = guide_legend(title = "Category Legend"))  # 只保留图例
+  
+  print(p)
+  
+
+p22
 library(patchwork)
 
 # 假设你有两个图 ggplot1 和 ggplot2
 # 使用 patchwork 拼接图形
-plot11
-plot11 + p22  # 默认是并排显示
+p1 <- ggplot2::ggplotGrob	(p2) |>  
+  gtable::gtable_filter("guide") |>  
+  grid.draw()  # 在当前绘图页面上绘制这个图例
+
+plot11 + p113  # 默认是并排显示
+# 导出用命令还是不OK
+ggsave("var.png", plot = last_plot(), dpi = 300, width = 12, height = 8)

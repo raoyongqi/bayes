@@ -5,6 +5,18 @@ library(corrr)
 library(ggplot2)
 library(dplyr)
 library(randomForestSRC)  # 加载 randomForestSRC 包
+require(geoR)
+require(randomForest)
+require(pls)
+require(caret)
+require(parallel)
+require(doParallel)
+require(raster)
+require(sf)
+require(pracma)
+require(data.table)
+require(ggplot2)
+require(ggpubr)
 
 # 读取数据
 file_path <- "C:/Users/r/Desktop/bayes/data/selection.csv"  # 替换为你的文件路径
