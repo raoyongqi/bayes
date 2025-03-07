@@ -35,7 +35,7 @@ plot_title <- ggtitle("Posterior Distributions of Regression Coefficients",
                       "with medians and 80% intervals")
 
 # Create the plot
-plot <- mcmc_areas(posterior,
+plot <- mcmc_areas_data(posterior,
                    pars = params_to_plot,
                    prob = 0.8) + 
   plot_title + 
@@ -43,7 +43,12 @@ plot <- mcmc_areas(posterior,
     panel.background = element_rect(fill = "white"),  # Set background to white
     plot.background = element_rect(fill = "white")   # Set entire plot background to white
   )
-
+ggplot(plot, aes(x = x, y = parameter, height = scaled_density, fill = ifelse(x >= 0, "Positive", "Negative"))) +
+  geom_density_ridges(stat = "identity") +
+  theme_ridges() + # 设置主题
+  scale_fill_manual(values = c("Positive" = "darkred", "Negative" = "coral")) + # 设置颜色
+  labs(title = "Density Distribution by Parameter", x = "Density") + # 去掉 y 轴标签
+  theme(legend.position = "none", axis.title.y = element_blank()) # 去掉 y 轴标
 # Save the plot as a high-resolution PNG image
 ggsave("high_res_plot.png", plot = plot, dpi = 300, width = 10, height = 8)
 

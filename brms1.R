@@ -1,11 +1,13 @@
 library(brms)
 library(bayesplot)
 library(ggplot2)
-
+rm(list=ls())
 setwd("C:/Users/r/Desktop/bayes")
 
 file_path <- "data/selection.csv"  # 替换为你的文件路径
 selection <- read.csv(file_path)
+selection_scaled <- selection
+
 selection_scaled[ , -which(names(selection) == "RATIO")] <- scale(selection[ , -which(names(selection) == "RATIO")])
 
 selection_scaled$Plant.Disease <- selection_scaled$RATIO
@@ -36,7 +38,13 @@ plot_title <- ggtitle("Posterior Distributions of Regression Coefficients",
 plot <- mcmc_areas(posterior,
                    pars = params_to_plot,
                    prob = 0.8) + 
-  plot_title 
+  plot_title + 
+  theme(
+    panel.background = element_rect(fill = "white"),  # Set background to white
+    plot.background = element_rect(fill = "white")   # Set entire plot background to white
+  ) +
+  scale_fill_manual(values = color_scheme)  # Set color for the positive and negative intervals
+
 
 print(plot)
 ggsave("high_res_plot.png", plot = plot, dpi = 300, width = 12, height = 8)

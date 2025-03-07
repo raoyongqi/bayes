@@ -11,6 +11,18 @@ df <- read.csv(file_path)
 # 删除 'RATIO' 列
 df$Pathogen.Load <- df$RATIO
 df <- df[, !names(df) %in% c("RATIO")]
+
+
+df_sf <- st_as_sf(df, coords = c("Longitude", "Latitude"), crs = 4326, remove = FALSE)
+
+# 将经纬度转换为 UTM 坐标系（根据经度选择合适的 UTM 带号）
+# 例如，这里我们假设使用带 50N（EPSG:32650），你可以根据需要选择正确的带号
+df_sf_utm <- st_transform(df_sf, crs = EPSG:4326)
+
+# 提取转换后的 UTM 坐标，并将其添加到原始数据框中
+df$UTMx <- st_coordinates(df_sf_utm)[, 1]
+df$UTMy <- st_coordinates(df_sf_utm)[, 2]
+
 df <- df %>%
   select(Pathogen.Load, everything())
 library("ranger")
