@@ -10,9 +10,9 @@ data <- data %>%
   rename(`Pathogen Load` = RATIO)
 
   # 定义测量项
-Climate <- c("SRAD", "PSEA", "WIND", "VAPR", "MAX_MAT", "TSEA", "MIN_MAT", "MAP")
-Soil <- c("S_SAND", "S_CLAY", "T_SAND", "T_BULK_DEN", "T_REF_BULK")
-Geo <- c("LAT", "LON", "ELEV")
+Climate <- c("SRAD", "PSEA", "WIND", "VAPR", "MAX_MAT", "TSEA","AVG_MAT", "MIN_MAT", "MAP")
+Soil <- c("S_SAND",  "T_SAND", "S_REF_BULK")
+Geo <- c("LAT", "LON", "ELEV","HAND")
 
 # 创建测量模型（反射性和复合指标）
 measurements <- constructs(
@@ -51,10 +51,10 @@ thm <- seminr_theme_create(manifest.reflective.shape =  "ellipse",
 
 # 估计 PLS 模型
 pls_model <- estimate_pls(data = data, measurements, structure)
-graph <- seminr::seminr_graph(pls_model, theme = thm)
-
-# 重新调整布局为从上到下
-layout_matrix <- layout_as_tree(graph)
+# graph <- seminr::seminr_graph(pls_model, theme = thm)
+# 
+# # 重新调整布局为从上到下
+# layout_matrix <- layout_as_tree(graph)
 
 # 绘制 PLS 模型
 seminr_theme_set(thm)

@@ -33,22 +33,19 @@ library(bayesplot)
 # Assuming posterior and params_to_plot are already defined
 plot_title <- ggtitle("Posterior Distributions of Regression Coefficients",
                       "with medians and 80% intervals")
-
+posterior
 # Create the plot
 plot <- mcmc_areas_data(posterior,
                    pars = params_to_plot,
-                   prob = 0.8) + 
-  plot_title + 
-  theme(
-    panel.background = element_rect(fill = "white"),  # Set background to white
-    plot.background = element_rect(fill = "white")   # Set entire plot background to white
-  )
+                   prob = 0.8) 
+library(ggridges)
 ggplot(plot, aes(x = x, y = parameter, height = scaled_density, fill = ifelse(x >= 0, "Positive", "Negative"))) +
   geom_density_ridges(stat = "identity") +
   theme_ridges() + # 设置主题
   scale_fill_manual(values = c("Positive" = "darkred", "Negative" = "coral")) + # 设置颜色
   labs(title = "Density Distribution by Parameter", x = "Density") + # 去掉 y 轴标签
   theme(legend.position = "none", axis.title.y = element_blank()) # 去掉 y 轴标
+
 # Save the plot as a high-resolution PNG image
 ggsave("high_res_plot.png", plot = plot, dpi = 300, width = 10, height = 8)
 
@@ -89,7 +86,11 @@ coef_summary_df$Response <- "Plant Disease"
 
 print(coef_summary_df)
 # 重新排列列顺序
-coef_summary_df <- coef_summary_df[, c("Response", "Predictor", "Estimate", "Est.error", "95%CI(Credible intervals)")]
+coef_summary_df <- coef_summary_df[, c("Response", "Predictor", "Estimate", "95%CI(Credible intervals)")]
+coef_summary_df
+library(openxlsx)
+
+
 print(coef_summary_df)
 custom_colnames <- function(colnames) {
   # 将下划线替换为空格
@@ -97,6 +98,7 @@ custom_colnames <- function(colnames) {
   colnames <- gsub("95%CI\\(Credible intervals\\)", "95\\% CI\\par(Credible intervals)", colnames)
   return(colnames)
 }
+write.xlsx(coef_summary_df, "coef_summary.xlsx", rowNames = FALSE)
 
 latex_table <- xtable(coef_summary_df,
                       align = c("l", "l", "l", "r", "r", "l"),

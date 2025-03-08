@@ -7,6 +7,9 @@ library(linkET)
 library(corrr)
 library(ggplot2)
 library(dplyr)
+library(randomForest)
+
+
 # 读取数据
 file_path <- "C:/Users/r/Desktop/bayes/data/selection.csv"  # 替换为你的文件路径
 df <- read.csv(file_path)
@@ -35,4 +38,5 @@ p <- plot(explanation) +
   )
 
 # 保存图像
-ggsave("lime.png", plot = last_plot(), dpi = 300, width = 12, height = 8)
+ggsave("lime.png", plot = p, dpi = 300, width = 12, height = 8)
+
